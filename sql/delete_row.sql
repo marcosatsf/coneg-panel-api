@@ -1,0 +1,1 @@
+DELETE FROM coneg.dim_cadastrados WHERE pesid=%s;

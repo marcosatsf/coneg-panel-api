@@ -1,0 +1,1 @@
+INSERT INTO coneg.dim_cadastrados VALUES (%s, %s, %s, %s);
