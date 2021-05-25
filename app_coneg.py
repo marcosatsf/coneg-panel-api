@@ -2,6 +2,7 @@ from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from db_transactions import PsqlPy
 import pandas as pd
+import shutil
 import uvicorn
 import zipfile
 import os
@@ -10,7 +11,7 @@ app = FastAPI()
 
 origins = [
     "http://localhost",
-    "http://localhost:8080",
+    "http://localhost:8083",
 ]
 
 app.add_middleware(
@@ -38,11 +39,11 @@ def root():
 
 @app.post("/upload")
 def upload_file(
-    file_rec: UploadFile
+    file_rec: UploadFile = File(...)
 ):
-    file_rec.save(os.path.join('./uploaded_files', file_rec.filename))
+    with open('files/data.zip', 'wb') as buffer:
+        shutil.copyfileobj(file_rec.file, buffer)
     return {
-        "file_size": len(file_rec),
         "filename": file_rec.filename
     }
     
