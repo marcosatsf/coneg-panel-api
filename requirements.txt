@@ -1,3 +1,4 @@
 fastapi[all]
+fastapi-login
 psycopg2-binary
 pandas
