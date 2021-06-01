@@ -1,26 +1,25 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.param_functions import Depends
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 from fastapi_login import LoginManager
 from fastapi_login.exceptions import InvalidCredentialsException
 from fastapi.middleware.cors import CORSMiddleware
-from db_transactions import PsqlPy
-import pandas as pd
+import files_manager as fm
 import shutil
 import uvicorn
-import zipfile
 import os
+import io
 
 SECRET = os.urandom(24).hex()
 
 app = FastAPI()
 
-manager = LoginManager(SECRET, token_url='/auth/token')
-fake_db = {'marquin@gmail.com':{'password':'pass_test'}}
+# manager = LoginManager(SECRET, token_url='/auth/token')
+# fake_db = {'marquin@gmail.com':{'password':'pass_test'}}
 
 origins = [
     "http://localhost",
-    "http://localhost:8083",
+    "http://localhost:8080",
 ]
 
 app.add_middleware(
@@ -33,46 +32,40 @@ app.add_middleware(
 
 @app.get("/")
 def root():
-    db = PsqlPy()
-    db.connect()
-    dfCad = pd.read_csv('files/cadastros.csv')
-    for _, row in dfCad.iterrows():
-        db.insert_reg(
-            id=row['identificacao'],
-            nome=row['nome'],
-            email=row['email'],
-            telefone=row['telefone']
-        )
-    db.disconnect()
     return {"message": "Hello World!"}
 
 @app.post("/upload")
 def upload_file(
     file_rec: UploadFile = File(...)
 ):
-    with open('files/data.zip', 'wb') as buffer:
+    with open('./dataset.zip', 'wb') as buffer:
         shutil.copyfileobj(file_rec.file, buffer)
-    return {
-        "filename": file_rec.filename
-    }
+    try:
+        fm.insert_full_zip()
+        return {"success_zipname": file_rec.filename}
+    except Exception as error:
+        raise HTTPException(status_code=406, detail=error)
+    finally:
+        os.remove('./dataset.zip')
+
 
 # -------------------Login login---------------------
-@manager.user_loader
-def load_user(email: str):
-    user = fake_db.get(email)
-    return user
+# @manager.user_loader
+# def load_user(email: str):
+#     user = fake_db.get(email)
+#     return user
 
-@app.post('/auth/token')
-def login(data: OAuth2PasswordRequestForm = Depends()):
-    email = data.username
-    password = data.password
+# @app.post('/auth/token')
+# def login(data: OAuth2PasswordRequestForm = Depends()):
+#     email = data.username
+#     password = data.password
 
-    user = load_user(email)
-    if not user or password != user['password']:
-        raise InvalidCredentialsException
-    
-    access_token = manager.create_access_token(data=dict(sub=email))
-    return {'access_token': access_token, 'token_type':'bearer'}
+#     user = load_user(email)
+#     if not user or password != user['password']:
+#         raise InvalidCredentialsException
+
+#     access_token = manager.create_access_token(data=dict(sub=email))
+#     return {'access_token': access_token, 'token_type':'bearer'}
 
 if __name__ == "__main__":
     uvicorn.run(app, port=5000, host='0.0.0.0')

@@ -4,6 +4,5 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 RUN rm requirements.txt
 COPY /sql ./sql/
-COPY /files ./files/
-COPY app_coneg.py db_transactions.py ./
+COPY app_coneg.py db_transactions.py files_manager.py ./
 CMD ["python", "app_coneg.py"]
