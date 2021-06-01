@@ -18,6 +18,7 @@ class PsqlPy:
         except Exception as e:
             print('Cannot connect to DB!')
 
+
     def insert_reg(self, **row):
         if not self.insert_row:
             with open('sql/insert_cad.sql','r') as f:
@@ -30,6 +31,7 @@ class PsqlPy:
             print("Cannot insert!")
             raise Exception
 
+
     def delete_reg(self, id):
         if not self.delete_row:
             with open('sql/delete_row.sql','r') as f:
@@ -41,6 +43,30 @@ class PsqlPy:
         except Exception:
             print(f"Cannot delete id={id}!")
             raise Exception
+
+
+    def trunc_table(self):
+        with open('sql/trunc.sql','r') as f:
+            query = f.read()
+
+        try:
+            self.cur.execute(query)
+        except Exception:
+            print(f"Cannot Truncate table!")
+            raise Exception
+
+    
+    def update_row(self, **row):
+        with open('sql/update_row.sql','r') as f:
+            query = f.read()
+
+        try:
+            data = (row['nome'], row['email'], row['telefone'], row['id'], )
+            self.cur.execute(query, data)
+        except Exception:
+            print(f"Cannot update table on id [{row['id']}]!")
+            raise Exception
+
 
     def disconnect(self):
         if self.cur is not None:

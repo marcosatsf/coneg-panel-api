@@ -2,6 +2,33 @@ from pandas.core.frame import DataFrame
 from db_transactions import PsqlPy
 from zipfile import ZipFile
 import pandas as pd
+import shutil
+from os import path
+
+
+def insert_full_zip() -> None:
+    """
+    Inserts full zip into DB
+    """
+    with ZipFile('./dataset.zip', 'r') as zip_file:
+        print(f'Uploading full register named: {zip_file.filename}')
+        df = validator_zip(zip_file)
+        for obj in zip_file.infolist():
+            if '/' in obj.filename:
+                zip_file.extract(obj, path='shr-data')
+
+    db = PsqlPy()
+    db.connect()
+    db.trunc_table()
+    for _, row in df.iterrows():
+        db.insert_reg(
+            id=row['identificacao'],
+            nome=row['nome'],
+            email=row['email'],
+            telefone=row['telefone']
+        )
+    db.disconnect()
+
 
 def validator_zip(zip_file: ZipFile) -> pd.DataFrame:
     """
@@ -40,7 +67,7 @@ def validator_zip(zip_file: ZipFile) -> pd.DataFrame:
                     if obj.file_size < 1:
                         raise Exception(f"Image file is empty: {obj.filename}")
                     else:
-                        raise Exception(f"There's no image file inside folder: {file_name[0]}")
+                        raise Exception(f"There's not only image files inside folder: {file_name[0]}")
                 else:
                     if file_name[0] not in df_id_aux:
                         df_id_aux.append(file_name[0])
@@ -57,25 +84,51 @@ def validator_zip(zip_file: ZipFile) -> pd.DataFrame:
     return df
 
 
+def insert_one(ident: int, nome: str, email: str, tel: str) -> None:
+    """
+    Inserts one record into DB
 
-def insert_full_zip() -> None:
+    Args:
+        ident (int): ID of record
+        nome (str): name of record
+        email (str): email of record
+        tel (str): phone of record
     """
-    Inserts full zip into DB
-    """
-    with ZipFile('./dataset.zip', 'r') as zip_file:
-        print(zip_file.filename)
-        df = validator_zip(zip_file)
+    with ZipFile('./one_image.zip', 'r') as zip_file:
+        print(f'Uploading single register')
+        validator_one(zip_file)
+        path_to_save = f"shr-data/{ident}/"
+        if path.exists(path_to_save): 
+            is_update = True
+            shutil.rmtree(path_to_save)
+        else:
+            is_update = False
         for obj in zip_file.infolist():
-            if '/' in obj.filename:
-                zip_file.extract(obj, path='shr-data')
+            zip_file.extract(obj, path=path_to_save)
 
     db = PsqlPy()
     db.connect()
-    for _, row in df.iterrows():
+    if is_update:
+        db.update_row(
+            id=ident,
+            nome=nome,
+            email=email,
+            telefone=tel
+        )
+    else:
         db.insert_reg(
-            id=row['identificacao'],
-            nome=row['nome'],
-            email=row['email'],
-            telefone=row['telefone']
+            id=ident,
+            nome=nome,
+            email=email,
+            telefone=tel
         )
     db.disconnect()
+
+
+def validator_one(zip_file: ZipFile) -> None:
+    for obj in zip_file.infolist():
+        if not obj.filename.split('.')[1] in ['jpg','jpeg','png']:
+            if obj.file_size < 1:
+                raise Exception(f"Image file is empty: {obj.filename}")
+            else:
+                raise Exception(f"There's not only image file inside zipped images")

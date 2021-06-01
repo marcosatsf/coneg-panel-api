@@ -1,0 +1,1 @@
+TRUNCATE TABLE coneg.dim_cadastrados RESTART IDENTITY CASCADE;

@@ -1,0 +1,1 @@
+UPDATE coneg.dim_cadastrados SET nome = %s, email = %s, telefone = %s WHERE pesid = %s;

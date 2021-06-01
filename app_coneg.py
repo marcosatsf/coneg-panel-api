@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.param_functions import Depends
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 from fastapi_login import LoginManager
@@ -35,9 +35,19 @@ def root():
     return {"message": "Hello World!"}
 
 @app.post("/upload")
-def upload_file(
-    file_rec: UploadFile = File(...)
-):
+def upload_file(file_rec: UploadFile = File(...)):
+    """
+    Route to manage full zip file.
+
+    Args:
+        file_rec (UploadFile): Zip file to register on DB.
+
+    Raises:
+        HTTPException: Any mismatch on zip pattern or failure to
+        insert on Postgres.
+    Returns:
+        (dict): Response with name of the zip file.
+    """
     with open('./dataset.zip', 'wb') as buffer:
         shutil.copyfileobj(file_rec.file, buffer)
     try:
@@ -47,6 +57,47 @@ def upload_file(
         raise HTTPException(status_code=406, detail=error)
     finally:
         os.remove('./dataset.zip')
+
+@app.post("/upload_single")
+def upload_single(
+    ident: int = Form(...),
+    nome: str = Form(...),
+    email: str = Form(...),
+    telefone: str = Form(...),
+    file_rec: UploadFile = File(...)
+):
+    """
+    Route to manage a single record.
+
+    Args:
+        ident (int): ID of record.
+        nome (str): name of record.
+        email (str): email of record.
+        tel (str): phone of record.
+        file_rec (UploadFile): zip file containing images of
+        the given ID.
+
+    Raises:
+        HTTPException: Any mismatch on zip pattern or failure to
+        insert on Postgres.
+
+    Returns:
+        (dict): Response with ID of register.
+    """
+    with open('./one_image.zip', 'wb') as buffer:
+        shutil.copyfileobj(file_rec.file, buffer)
+    try:
+        fm.insert_one(
+            id=ident,
+            nome=nome,
+            email=email,
+            tel=telefone
+        )
+        return {"success_insert_id": ident}
+    except Exception as error:
+        raise HTTPException(status_code=406, detail=error)
+    finally:
+        os.remove('./one_image.zip')
 
 
 # -------------------Login login---------------------
