@@ -84,7 +84,7 @@ def upload_single(
     Returns:
         (dict): Response with ID of register.
     """
-    with open('./one_image.zip', 'wb') as buffer:
+    with open(f'./{ident}.jpg', 'wb') as buffer:
         shutil.copyfileobj(file_rec.file, buffer)
     try:
         fm.insert_one(
@@ -97,7 +97,7 @@ def upload_single(
     except Exception as error:
         raise HTTPException(status_code=406, detail=error)
     finally:
-        os.remove('./one_image.zip')
+        os.remove(f'./{ident}.jpg')
 
 
 # -------------------Login login---------------------
