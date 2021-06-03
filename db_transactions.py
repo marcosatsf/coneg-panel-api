@@ -1,7 +1,11 @@
 import psycopg2
 
 class PsqlPy:
-    def connect(self):
+    def __init__(self) -> None:
+        """
+        Initialize DB connection, retrieving the current cursor
+        to it and set auto-commit ON.
+        """
         try:
             self.conn = psycopg2.connect(
                 host="db",
@@ -20,6 +24,12 @@ class PsqlPy:
 
 
     def insert_reg(self, **row):
+        """
+        Insert row to registration table.
+
+        Raises:
+            Exception: Cannot insert register.
+        """
         if not self.insert_row:
             with open('sql/insert_cad.sql','r') as f:
                 self.insert_row = f.read()
@@ -33,6 +43,15 @@ class PsqlPy:
 
 
     def delete_reg(self, id):
+        """
+        Delete a register on registration table, given an ID.
+
+        Args:
+            id (int): Identification (unique number).
+
+        Raises:
+            Exception: Cannot delete register.
+        """
         if not self.delete_row:
             with open('sql/delete_row.sql','r') as f:
                 self.delete_row = f.read()
@@ -46,6 +65,12 @@ class PsqlPy:
 
 
     def trunc_table(self):
+        """
+        Truncate registration table.
+
+        Raises:
+            Exception: Cannot truncate table.
+        """
         with open('sql/trunc.sql','r') as f:
             query = f.read()
 
@@ -55,8 +80,14 @@ class PsqlPy:
             print(f"Cannot Truncate table!")
             raise Exception
 
-    
+
     def update_row(self, **row):
+        """
+        Update row of registration table.
+
+        Raises:
+            Exception: Cannot update row.
+        """
         with open('sql/update_row.sql','r') as f:
             query = f.read()
 
@@ -69,6 +100,9 @@ class PsqlPy:
 
 
     def disconnect(self):
+        """
+        Invalidate DB connection.
+        """
         if self.cur is not None:
             self.cur.close()
         if self.conn is not None:

@@ -18,7 +18,7 @@ def insert_full_zip() -> None:
         for obj in zip_file.infolist():
             if len(obj.filename.split('/')) == 2:
                 zip_file.extract(obj.filename, path='tmp/')
-        # Remove old faces in case if there's old ones  
+        # Remove old faces in case if there's old ones
         if os.path.exists('shr-data/faces/'):
             shutil.rmtree('shr-data/faces/')
         # Creates faces dir
@@ -28,7 +28,6 @@ def insert_full_zip() -> None:
         shutil.rmtree('tmp')
 
     db = PsqlPy()
-    db.connect()
     db.trunc_table()
     for _, row in df.iterrows():
         db.insert_reg(
@@ -100,7 +99,7 @@ def insert_one(ident: int, nome: str, email: str, tel: str) -> None:
         tel (str): phone of record
     """
     print(f'Uploading single register')
-    if os.path.exists(f"shr-data/faces/{ident}.jpg"): 
+    if os.path.exists(f"shr-data/faces/{ident}.jpg"):
         is_update = True
     else:
         is_update = False
@@ -110,7 +109,6 @@ def insert_one(ident: int, nome: str, email: str, tel: str) -> None:
     shutil.move(f'./{ident}.jpg', f"shr-data/faces/{ident}.jpg")
 
     db = PsqlPy()
-    db.connect()
     if is_update:
         db.update_row(
             id=ident,
