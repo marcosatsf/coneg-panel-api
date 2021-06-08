@@ -9,9 +9,13 @@ name = "pypi"
 python_version = "3.8"
 
 [packages]
+fastapi-login = "*"
+tortoise-orm = "*"
+passlib = "*"
 psycopg2-binary = "*"
 pandas = "*"
-fastapi-login = "*"
+bcrypt = "*"
+asyncpg = "*"
 
 [packages.fastapi]
 extras = [ "all",]

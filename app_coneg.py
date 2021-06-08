@@ -1,41 +1,54 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Form
-from fastapi.param_functions import Depends
-from fastapi.security.oauth2 import OAuth2PasswordRequestForm
-from fastapi_login import LoginManager
-from fastapi_login.exceptions import InvalidCredentialsException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form, Depends, status
+#from fastapi.security.oauth2 import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from tortoise.contrib.fastapi import register_tortoise
+#from typing import Optional
+#from passlib.hash import bcrypt
+#from fastapi_login.exceptions import InvalidCredentialsException
+from user_model import User, User_Pydantic, UserIn_Pydantic
 from fastapi.middleware.cors import CORSMiddleware
+#from datetime import datetime, timedelta
 import files_manager as fm
+from auth_route import get_current_user, authentication_router
 import shutil
+#from pathlib import Path
+import sys
 import uvicorn
+import jwt
 import os
 import io
 
-SECRET = os.urandom(24).hex()
-
-app = FastAPI()
-
-# manager = LoginManager(SECRET, token_url='/auth/token')
-# fake_db = {'marquin@gmail.com':{'password':'pass_test'}}
-
-origins = [
+# Consts
+JWT_SECRET = os.urandom(24).hex()
+ACCESS_TOKEN_EXPIRE_MINUTES = 10
+ORIGINS = [
     "http://localhost",
     "http://localhost:8080",
 ]
 
+# Instantiate app and routes
+app = FastAPI()
+app.include_router(authentication_router)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.get("/")
-def root():
-    return {"message": "Hello World!"}
+# Register DB
+register_tortoise(
+    app,
+    db_url='postgres://coneg_user:conegpass@db:5432/coneg_user?schema=coneg',
+    modules={'models': ['user_model']},
+    add_exception_handlers=True
+)
 
 @app.post("/upload")
-def upload_file(file_rec: UploadFile = File(...)):
+def upload_file(
+    user: User_Pydantic = Depends(get_current_user), 
+    file_rec: UploadFile = File(...)
+):
     """
     Route to manage full zip file.
 
@@ -54,12 +67,14 @@ def upload_file(file_rec: UploadFile = File(...)):
         fm.insert_full_zip()
         return {"success_zipname": file_rec.filename}
     except Exception as error:
-        raise HTTPException(status_code=406, detail=error)
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=error)
     finally:
         os.remove('./dataset.zip')
 
+
 @app.post("/upload_single")
 def upload_single(
+    user: User_Pydantic = Depends(get_current_user),
     ident: int = Form(...),
     nome: str = Form(...),
     email: str = Form(...),
@@ -74,11 +89,10 @@ def upload_single(
         nome (str): name of record.
         email (str): email of record.
         tel (str): phone of record.
-        file_rec (UploadFile): zip file containing images of
-        the given ID.
+        file_rec (UploadFile): image file of the given ID.
 
     Raises:
-        HTTPException: Any mismatch on zip pattern or failure to
+        HTTPException: Any mismatch on file pattern or failure to
         insert on Postgres.
 
     Returns:
@@ -88,35 +102,15 @@ def upload_single(
         shutil.copyfileobj(file_rec.file, buffer)
     try:
         fm.insert_one(
-            id=ident,
+            ident=ident,
             nome=nome,
             email=email,
             tel=telefone
         )
-        return {"success_insert_id": ident}
+        return {"success_insert_id": str(ident)}
     except Exception as error:
-        raise HTTPException(status_code=406, detail=error)
-    finally:
-        os.remove(f'./{ident}.jpg')
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=error)
 
-
-# -------------------Login login---------------------
-# @manager.user_loader
-# def load_user(email: str):
-#     user = fake_db.get(email)
-#     return user
-
-# @app.post('/auth/token')
-# def login(data: OAuth2PasswordRequestForm = Depends()):
-#     email = data.username
-#     password = data.password
-
-#     user = load_user(email)
-#     if not user or password != user['password']:
-#         raise InvalidCredentialsException
-
-#     access_token = manager.create_access_token(data=dict(sub=email))
-#     return {'access_token': access_token, 'token_type':'bearer'}
 
 if __name__ == "__main__":
     uvicorn.run(app, port=5000, host='0.0.0.0')

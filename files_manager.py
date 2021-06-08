@@ -25,7 +25,7 @@ def insert_full_zip() -> None:
         os.mkdir('shr-data/faces/')
         for files in glob.glob('tmp/*/*'):
             shutil.move(files, f"shr-data/faces/{files.split('/')[-1]}")
-        shutil.rmtree('tmp')
+        shutil.rmtree('tmp/')
 
     db = PsqlPy()
     db.trunc_table()

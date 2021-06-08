@@ -1,4 +1,8 @@
 fastapi[all]
 fastapi-login
+tortoise-orm
+passlib
+bcrypt
+asyncpg
 psycopg2-binary
 pandas
