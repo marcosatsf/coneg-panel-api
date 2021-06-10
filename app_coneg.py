@@ -1,21 +1,13 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form, Depends, status
-#from fastapi.security.oauth2 import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from tortoise.contrib.fastapi import register_tortoise
-#from typing import Optional
-#from passlib.hash import bcrypt
-#from fastapi_login.exceptions import InvalidCredentialsException
 from user_model import User, User_Pydantic, UserIn_Pydantic
 from fastapi.middleware.cors import CORSMiddleware
-#from datetime import datetime, timedelta
 import files_manager as fm
 from auth_route import get_current_user, authentication_router
 import shutil
-#from pathlib import Path
 import sys
 import uvicorn
-import jwt
 import os
-import io
 
 # Consts
 JWT_SECRET = os.urandom(24).hex()
@@ -46,7 +38,7 @@ register_tortoise(
 
 @app.post("/upload")
 def upload_file(
-    user: User_Pydantic = Depends(get_current_user), 
+    user: User_Pydantic = Depends(get_current_user),
     file_rec: UploadFile = File(...)
 ):
     """
