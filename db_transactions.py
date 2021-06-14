@@ -1,4 +1,5 @@
 import psycopg2
+from psycopg2 import sql
 
 class PsqlPy:
     def __init__(self) -> None:
@@ -22,6 +23,23 @@ class PsqlPy:
         except Exception as e:
             print('Cannot connect to DB!')
 
+    
+    def select_query(self, select: str, distinct: bool, table: str):
+        if distinct:
+            with open('sql/select_distinct.sql','r') as f:
+                query = f.read()
+        
+        try:
+            self.cur.execute(sql.SQL(query).format(
+                select=sql.Identifier(select),
+                table=sql.Identifier(table)
+                ))
+            res = [row[0] for row in self.cur.fetchall()]
+            return res
+        except Exception:
+            print("Cannot select!")
+            raise Exception
+        
 
     def insert_reg(self, **row):
         """

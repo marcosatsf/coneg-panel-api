@@ -18,7 +18,16 @@ authentication_router = APIRouter(
     tags=["auth"]
 )
 
-async def authenticate_user(username: str, password: str):
+async def check_user_existence(username: str) -> bool:
+    user = await User.get(username=username)
+    if user:
+        raise HTTPException(
+            status_code=status.HTTP_406_NOT_ACCEPTABLE,
+            detail='Username already taken'
+        )
+    return False
+
+async def authenticate_user(username: str, password: str) -> User_Pydantic:
     user = await User.get(username=username)
     if not user or not user.verify_password(password):
         raise HTTPException(
@@ -48,6 +57,18 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 
 @authentication_router.post('/token')
 async def generate_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    """
+    Route to generate token given a valid user.
+
+    Args:
+        form_data (OAuth2PasswordRequestForm, optional): Form including username and password.
+
+    Raises:
+        HTTPException: User not exists.
+
+    Returns:
+        dict: Containing access information and token.
+    """
     user = await authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
@@ -65,11 +86,30 @@ async def generate_token(form_data: OAuth2PasswordRequestForm = Depends()):
 
 @authentication_router.post('/users', response_model=User_Pydantic)
 async def create_user(user: UserIn_Pydantic):
-    user_obj = User(username=user.username, password_hash=bcrypt.hash(user.password_hash))
-    await user_obj.save()
-    return await User_Pydantic.from_tortoise_orm(user_obj)
+    """
+    Route to create a new user
+
+    Args:
+        user (UserIn_Pydantic): Username and password to be registered.
+
+    Returns:
+        User_Pydantic: User saved. 
+    """
+    user = await check_user_existence(user.username)
+    if not user:
+        user_obj = User(username=user.username, password_hash=bcrypt.hash(user.password_hash))
+        await user_obj.save()
+        return await User_Pydantic.from_tortoise_orm(user_obj)
 
 @authentication_router.get('/users/me', response_model=User_Pydantic)
-async def get_user(data: int, user: User_Pydantic = Depends(get_current_user)):
-    print(data)
+async def get_user(user: User_Pydantic = Depends(get_current_user)):
+    """
+    Route to get user information.
+
+    Args:
+        user (User_Pydantic, optional): Username and password to be registered.
+
+    Returns:
+        User_Pydantic: User queried. 
+    """
     return user

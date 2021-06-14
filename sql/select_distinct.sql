@@ -1,0 +1,1 @@
+SELECT distinct {select} FROM coneg.{table};

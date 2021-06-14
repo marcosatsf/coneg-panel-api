@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form, Depends, status
 from tortoise.contrib.fastapi import register_tortoise
+from db_transactions import PsqlPy
 from user_model import User, User_Pydantic, UserIn_Pydantic
 from fastapi.middleware.cors import CORSMiddleware
 import files_manager as fm
@@ -9,24 +10,27 @@ import sys
 import uvicorn
 import os
 
+
 # Consts
 JWT_SECRET = os.urandom(24).hex()
 ACCESS_TOKEN_EXPIRE_MINUTES = 10
-ORIGINS = [
-    "http://localhost",
-    "http://localhost:8080",
-]
+# ORIGINS = [
+#     "http://localhost",
+#     "http://localhost:8080",
+# ]
+
 
 # Instantiate app and routes
 app = FastAPI()
 app.include_router(authentication_router)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ORIGINS,
+    allow_origins=['*'],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # Register DB
 register_tortoise(
@@ -35,6 +39,7 @@ register_tortoise(
     modules={'models': ['user_model']},
     add_exception_handlers=True
 )
+
 
 @app.post("/upload")
 def upload_file(
@@ -67,7 +72,6 @@ def upload_file(
 @app.post("/upload_single")
 def upload_single(
     user: User_Pydantic = Depends(get_current_user),
-    ident: int = Form(...),
     nome: str = Form(...),
     email: str = Form(...),
     telefone: str = Form(...),
@@ -77,7 +81,6 @@ def upload_single(
     Route to manage a single record.
 
     Args:
-        ident (int): ID of record.
         nome (str): name of record.
         email (str): email of record.
         tel (str): phone of record.
@@ -90,18 +93,27 @@ def upload_single(
     Returns:
         (dict): Response with ID of register.
     """
-    with open(f'./{ident}.jpg', 'wb') as buffer:
+    name_from_id = file_rec.filename.split('.')[0]
+    with open(f'./{name_from_id}.jpg', 'wb') as buffer:
         shutil.copyfileobj(file_rec.file, buffer)
     try:
         fm.insert_one(
-            ident=ident,
+            ident=name_from_id,
             nome=nome,
             email=email,
             tel=telefone
         )
-        return {"success_insert_id": str(ident)}
+        return {"success_insert_id": str(name_from_id)}
     except Exception as error:
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=error)
+
+
+@app.get("/inpector_list")
+def cams_list(user: User_Pydantic = Depends(get_current_user)):
+    db = PsqlPy()
+    res = db.select_query(select='local', distinct=True, table='fato_faces')
+    db.disconnect()
+    return {'cams': res}
 
 
 if __name__ == "__main__":
