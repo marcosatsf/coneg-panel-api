@@ -1,4 +1,5 @@
 fastapi[all]
+pyyaml
 fastapi-login
 tortoise-orm
 passlib

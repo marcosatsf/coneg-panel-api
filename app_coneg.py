@@ -4,6 +4,7 @@ from db_transactions import PsqlPy
 from user_model import User, User_Pydantic, UserIn_Pydantic
 from fastapi.middleware.cors import CORSMiddleware
 import files_manager as fm
+import yaml
 from auth_route import get_current_user, authentication_router
 import shutil
 import sys
@@ -36,6 +37,7 @@ app.add_middleware(
 register_tortoise(
     app,
     db_url='postgres://coneg_user:conegpass@db:5432/coneg_user?schema=coneg',
+    #db_url='postgres://coneg_user:conegpass@localhost:5435/coneg_user?schema=coneg',
     modules={'models': ['user_model']},
     add_exception_handlers=True
 )
@@ -114,6 +116,40 @@ def cams_list(user: User_Pydantic = Depends(get_current_user)):
     res = db.select_query(select='local', distinct=True, table='fato_faces')
     db.disconnect()
     return {'cams': res}
+
+
+@app.get("/current_notif")
+def cams_list(user: User_Pydantic = Depends(get_current_user)):
+    try:
+        with open(f'./shr-data/config_notificacao.yaml', 'r') as f:
+            data = yaml.load(f)
+    except FileNotFoundError as e:
+        with open(f'./shr-data/config_notificacao.yaml', 'w') as f:
+            data = {
+                "method": "Ainda não definido.",
+                "message": "Ainda não definido."
+            }
+            yaml.dump(data, f)
+
+    return {
+        "method": data['method'],
+        "message": data['message']
+      }
+
+
+@app.post("/update_notif")
+def cams_list(method: str, message: str, user: User_Pydantic = Depends(get_current_user)):
+    with open(f'./shr-data/config_notificacao.yaml', 'w') as f:
+        data = {
+            "method": method,
+            "message": message
+        }
+        yaml.dump(data, f)
+
+    return {
+        "method": data['method'],
+        "message": data['message']
+      }
 
 
 if __name__ == "__main__":
