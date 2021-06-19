@@ -1,6 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form, Depends, status
 from tortoise.contrib.fastapi import register_tortoise
 from db_transactions import PsqlPy
+from pydantic import BaseModel
 from user_model import User, User_Pydantic, UserIn_Pydantic
 from fastapi.middleware.cors import CORSMiddleware
 import files_manager as fm
@@ -41,6 +42,15 @@ register_tortoise(
     modules={'models': ['user_model']},
     add_exception_handlers=True
 )
+
+class UpdateNotifi(BaseModel):
+    """
+    Model to exchange info about the method and the message.
+    It is used to receive the packet to update the current
+    configuration.
+    """
+    method: str
+    message: str
 
 
 @app.post("/upload")
@@ -112,6 +122,12 @@ def upload_single(
 
 @app.get("/inpector_list")
 def cams_list(user: User_Pydantic = Depends(get_current_user)):
+    """
+    List all cameras/inspectors activelly sending logs.
+
+    Returns:
+        (dict): Names of each inspector.
+    """
     db = PsqlPy()
     res = db.select_query(select='local', distinct=True, table='fato_faces')
     db.disconnect()
@@ -119,7 +135,14 @@ def cams_list(user: User_Pydantic = Depends(get_current_user)):
 
 
 @app.get("/current_notif")
-def cams_list(user: User_Pydantic = Depends(get_current_user)):
+def get_notif(user: User_Pydantic = Depends(get_current_user)):
+    """
+    Send the current notification message and method adopted by the
+    ConEg system.
+
+    Returns:
+        (dict): Current method and message stored.
+    """
     try:
         with open(f'./shr-data/config_notificacao.yaml', 'r') as f:
             data = yaml.load(f)
@@ -138,18 +161,32 @@ def cams_list(user: User_Pydantic = Depends(get_current_user)):
 
 
 @app.post("/update_notif")
-def cams_list(method: str, message: str, user: User_Pydantic = Depends(get_current_user)):
-    with open(f'./shr-data/config_notificacao.yaml', 'w') as f:
+def register_notif(
+    item: UpdateNotifi,
+    user: User_Pydantic = Depends(get_current_user)
+    ):
+    """
+    Receive new notification configuration.
+
+    Args:
+        item (UpdateNotifi): Model of request containing method and message
+        to be used on notification.
+
+    Returns:
+        (dict): Current method and message stored.
+    """
+    item_dict = item.dict()
+    with open(f'./shr-data/config_notificacao.yaml', 'w', encoding='utf-8') as f:
         data = {
-            "method": method,
-            "message": message
+            "method": item_dict['method'],
+            "message": item_dict['message']
         }
         yaml.dump(data, f)
 
     return {
         "method": data['method'],
         "message": data['message']
-      }
+    }
 
 
 if __name__ == "__main__":
