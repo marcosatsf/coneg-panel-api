@@ -12,10 +12,12 @@ python_version = "3.8"
 fastapi-login = "*"
 tortoise-orm = "*"
 passlib = "*"
-psycopg2-binary = "*"
+psycopg2-binary = "==2.8.6"
 pandas = "*"
 bcrypt = "*"
 asyncpg = "*"
+PyYAML = "*"
+jwt = "*"
 
 [packages.fastapi]
 extras = [ "all",]
