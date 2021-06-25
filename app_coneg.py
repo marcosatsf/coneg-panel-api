@@ -47,7 +47,7 @@ def cams_list(user: User_Pydantic = Depends(get_current_user)):
         (dict): Names of each inspector.
     """
     db = PsqlPy()
-    res = db.select_query(select='local', distinct=True, table='fato_faces')
+    res = db.select_query_distinct(select='local', table='fato_faces')
     db.disconnect()
     return {'cams': res}
 

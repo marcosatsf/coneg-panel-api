@@ -23,12 +23,31 @@ class PsqlPy:
         except Exception as e:
             print('Cannot connect to DB!')
 
+conn = psycopg2.connect(
+                host="localhost",
+                port="5435",
+                database="coneg_user",
+                user="coneg_user",
+                password="conegpass"
+            )
+
     
-    def select_query(self, select: str, distinct: bool, table: str):
-        if distinct:
-            with open('sql/select_distinct.sql','r') as f:
-                query = f.read()
-        
+    def select_query_distinct(self, select: str, table: str):
+        """
+        Selects distinct value from a given table
+
+        Args:
+            select (str): value to be placed on distinct
+            table (str): table from which query
+
+        Raises:
+            Exception: Cannot select distinct.
+
+        Returns:
+            List[str]: list of strings
+        """
+        with open('sql/select_distinct.sql','r') as f:
+            query = f.read()
         try:
             self.cur.execute(sql.SQL(query).format(
                 select=sql.Identifier(select),
@@ -37,9 +56,23 @@ class PsqlPy:
             res = [row[0] for row in self.cur.fetchall()]
             return res
         except Exception:
-            print("Cannot select!")
+            print("Cannot select distinct!")
             raise Exception
-        
+
+
+    def select_query(self, query_path: str, local: str):
+        with open(f'sql/{query_path}', 'r') as f:
+            query = f.read()
+
+        try:
+            data = (local, )
+            self.cur.execute(query, data)
+            res = [list(row) for row in self.cur.fetchall()]
+            return res
+        except Exception:
+            print("Cannot select distinct!")
+            raise Exception
+
 
     def insert_reg(self, **row):
         """

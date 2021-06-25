@@ -1,3 +1,4 @@
+from typing import List
 from fastapi.routing import APIRouter
 from passlib.hash import bcrypt
 from model.notificacao_model import UpdateNotifi
@@ -18,10 +19,12 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 20
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
 
+
 # ------------------------------------------------------AUTH
 authentication_router = APIRouter(
     tags=["auth"]
 )
+
 
 async def check_user_existence(username: str) -> bool:
     user = await User.get(username=username)
@@ -32,6 +35,7 @@ async def check_user_existence(username: str) -> bool:
         )
     return False
 
+
 async def authenticate_user(username: str, password: str) -> User_Pydantic:
     user = await User.get(username=username)
     if not user or not user.verify_password(password):
@@ -41,12 +45,14 @@ async def authenticate_user(username: str, password: str) -> User_Pydantic:
         )
     return user
 
+
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
     expire = datetime.utcnow() + expires_delta
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm='HS256')
     return encoded_jwt
+
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
@@ -59,6 +65,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
             detail='Invalid username or password'
         )
     return await User_Pydantic.from_tortoise_orm(user)
+
 
 @authentication_router.post('/token')
 async def generate_token(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -89,6 +96,7 @@ async def generate_token(form_data: OAuth2PasswordRequestForm = Depends()):
     #token = jwt.encode(user_obj.dict(),JWT_SECRET)
     return {'access_token': access_token, 'token_type':'bearer'}
 
+
 @authentication_router.post('/users', response_model=User_Pydantic)
 async def create_user(user: UserIn_Pydantic):
     """
@@ -104,6 +112,7 @@ async def create_user(user: UserIn_Pydantic):
     await user_obj.save()
     return await User_Pydantic.from_tortoise_orm(user_obj)
 
+
 @authentication_router.get('/users/me', response_model=User_Pydantic)
 async def get_user(user: User_Pydantic = Depends(get_current_user)):
     """
@@ -113,9 +122,10 @@ async def get_user(user: User_Pydantic = Depends(get_current_user)):
         user (User_Pydantic, optional): Username and password to be registered.
 
     Returns:
-        User_Pydantic: User queried. 
+        User_Pydantic: User queried.
     """
     return user
+
 
 # ------------------------------------------------------NOTIFICATION
 notification_router = APIRouter(
@@ -183,6 +193,7 @@ register_router = APIRouter(
     tags=["registration"]
 )
 
+
 @register_router.post("/upload")
 def upload_file(
     user: User_Pydantic = Depends(get_current_user),
@@ -248,3 +259,17 @@ def upload_single(
         return {"success_insert_id": str(name_from_id)}
     except Exception as error:
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=error)
+
+# ------------------------------------------------------DASHBOARD
+dashboard_router = APIRouter(
+    tags=["dashboard"]
+)
+
+
+@dashboard_router.get("/route_info/{where}")
+def upload_file(
+    where: str,
+    which: List[str],
+    user: User_Pydantic = Depends(get_current_user),
+):
+    return build_info(where, which)
