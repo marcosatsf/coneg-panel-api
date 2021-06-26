@@ -2,7 +2,10 @@ from typing import List
 from db_transactions import PsqlPy
 
 
-def build_info(where: str, which: List[str]):
+def build_info(where_which: str):
+    tmp = where_which.split('.')
+    where = tmp[0]
+    which = tmp[1:]
     data = {}
     db = PsqlPy()
     for element in which:
@@ -20,18 +23,8 @@ def build_info(where: str, which: List[str]):
             data[element] = data_temp
         elif element == 'usagedata':
             data[element] = db.select_query(query_path='usage_data_query.sql', local=where)
-            pass
         elif element == 'infodata':
-            pass
+            # max and min not using mask. Given a day
+            data[element] = db.select_query(query_path='info_data_query.sql', local=where)
     db.disconnect()
     return data
-
-
-def weeklydata_f():
-    pass
-
-def usagedata_f():
-    pass
-
-def infodata_f():
-    pass

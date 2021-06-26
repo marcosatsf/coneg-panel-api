@@ -23,15 +23,7 @@ class PsqlPy:
         except Exception as e:
             print('Cannot connect to DB!')
 
-conn = psycopg2.connect(
-                host="localhost",
-                port="5435",
-                database="coneg_user",
-                user="coneg_user",
-                password="conegpass"
-            )
 
-    
     def select_query_distinct(self, select: str, table: str):
         """
         Selects distinct value from a given table
@@ -70,7 +62,7 @@ conn = psycopg2.connect(
             res = [list(row) for row in self.cur.fetchall()]
             return res
         except Exception:
-            print("Cannot select distinct!")
+            print("Cannot select!")
             raise Exception
 
 

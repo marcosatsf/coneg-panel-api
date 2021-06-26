@@ -10,17 +10,17 @@ SELECT
     COUNT(tid) AS partial_tot
 FROM coneg.fato_faces ff
 WHERE
-    local = 'Entrada principal' AND
+    local = %s AND
     ts BETWEEN date_trunc('day', CURRENT_DATE - interval '7 day') AND
     date_trunc('day', CURRENT_DATE)
 GROUP BY date_trunc('day', ts), ff.status
 )
 SELECT
     dst.status,
-    dst.ts,
+    dst.ts::date,
     COALESCE(SUM(partial_tot),0)::INTEGER AS total
 FROM daily_status_table dst
 LEFT JOIN daily_report dr
 ON dst.status = dr.status AND dst.ts = dr.day
 GROUP BY dst.status, dst.ts
-ORDER BY dst.status, dst.ts
+ORDER BY dst.status, dst.ts;

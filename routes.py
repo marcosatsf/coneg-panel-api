@@ -7,6 +7,7 @@ from fastapi.security.oauth2 import OAuth2PasswordBearer, OAuth2PasswordRequestF
 from fastapi import HTTPException, status, Depends, UploadFile, File, Form
 from datetime import datetime, timedelta
 import files_manager as fm
+import dash_process as dp
 import shutil
 import yaml
 import jwt
@@ -266,10 +267,9 @@ dashboard_router = APIRouter(
 )
 
 
-@dashboard_router.get("/route_info/{where}")
+@dashboard_router.get("/route_info")
 def upload_file(
-    where: str,
-    which: List[str],
+    where_which: str,
     user: User_Pydantic = Depends(get_current_user),
 ):
-    return build_info(where, which)
+    return dp.build_info(where_which)
