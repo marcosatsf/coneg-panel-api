@@ -22,7 +22,7 @@ def build_info(where_which: str):
             # Link to element
             data[element] = data_temp
         elif element == 'usagedata':
-            data[element] = db.select_query(query_path='usage_data_query.sql', local=where)
+            data[element] = db.select_query(query_path='usage_data_query.sql', local=where, unique=True)
         elif element == 'infodata':
             # max and min not using mask. Given a day
             data[element] = db.select_query(query_path='info_data_query.sql', local=where)

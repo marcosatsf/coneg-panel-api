@@ -19,6 +19,7 @@ class PsqlPy:
             self.insert_row = ''
             self.delete_row = ''
             self.cur = self.conn.cursor()
+            self.cur.execute("SET TIMEZONE='America/Sao_Paulo'")
             print('Connected DB!')
         except Exception as e:
             print('Cannot connect to DB!')
@@ -52,14 +53,17 @@ class PsqlPy:
             raise Exception
 
 
-    def select_query(self, query_path: str, local: str):
+    def select_query(self, query_path: str, local: str, unique: bool = False):
         with open(f'sql/{query_path}', 'r') as f:
             query = f.read()
 
         try:
             data = (local, )
             self.cur.execute(query, data)
-            res = [list(row) for row in self.cur.fetchall()]
+            if unique:
+                res = [row[0] for row in self.cur.fetchall()]
+            else:
+                res = [list(row) for row in self.cur.fetchall()]
             return res
         except Exception:
             print("Cannot select!")
