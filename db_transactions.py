@@ -53,13 +53,17 @@ class PsqlPy:
             raise Exception
 
 
-    def select_query(self, query_path: str, local: str, unique: bool = False):
+    def select_query(self, query_path: str, local: str = None, unique: bool = False):
         with open(f'sql/{query_path}', 'r') as f:
             query = f.read()
 
         try:
-            data = (local, )
-            self.cur.execute(query, data)
+            if local:
+                data = (local, )
+                self.cur.execute(query, data)
+            else:
+                self.cur.execute(query)
+
             if unique:
                 res = [row[0] for row in self.cur.fetchall()]
             else:

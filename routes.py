@@ -273,3 +273,10 @@ def upload_file(
     user: User_Pydantic = Depends(get_current_user),
 ):
     return dp.build_info(where_which)
+
+
+@dashboard_router.get("/route_all_info")
+def upload_file(
+    user: User_Pydantic = Depends(get_current_user),
+):
+    return dp.build_info_all()
