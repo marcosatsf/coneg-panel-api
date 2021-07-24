@@ -2,6 +2,8 @@ from typing import List
 from fastapi.routing import APIRouter
 from passlib.hash import bcrypt
 from model.notificacao_model import UpdateNotifi
+from model.location_model import UpdateLocation
+from model.password_model import PasswordChange
 from model.user_model import User, User_Pydantic, UserIn_Pydantic
 from fastapi.security.oauth2 import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi import HTTPException, status, Depends, UploadFile, File, Form
@@ -15,7 +17,7 @@ import os
 
 
 JWT_SECRET = os.urandom(24).hex()
-ACCESS_TOKEN_EXPIRE_MINUTES = 20
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
@@ -27,14 +29,14 @@ authentication_router = APIRouter(
 )
 
 
-async def check_user_existence(username: str) -> bool:
-    user = await User.get(username=username)
-    if user:
-        raise HTTPException(
-            status_code=status.HTTP_406_NOT_ACCEPTABLE,
-            detail='Username already taken'
-        )
-    return False
+# async def check_user_existence(username: str) -> bool:
+#     user = await User.get(username=username)
+#     if user.verify_password():
+#         raise HTTPException(
+#             status_code=status.HTTP_406_NOT_ACCEPTABLE,
+#             detail='Username already taken'
+#         )
+#     return False
 
 
 async def authenticate_user(username: str, password: str) -> User_Pydantic:
@@ -47,9 +49,9 @@ async def authenticate_user(username: str, password: str) -> User_Pydantic:
     return user
 
 
-def create_access_token(data: dict, expires_delta: timedelta = None):
+def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + expires_delta
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm='HS256')
     return encoded_jwt
@@ -90,12 +92,13 @@ async def generate_token(form_data: OAuth2PasswordRequestForm = Depends()):
         )
     user_obj = await User_Pydantic.from_tortoise_orm(user)
     print(user_obj.dict())
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user_obj.dict()}, expires_delta=access_token_expires
-    )
+    #access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    # access_token = create_access_token(
+    #     data={"sub": user_obj.dict()}#, expires_delta=access_token_expires
+    # )
     #token = jwt.encode(user_obj.dict(),JWT_SECRET)
-    return {'access_token': access_token, 'token_type':'bearer'}
+    return {'access_token': create_access_token(
+        data={"sub": user_obj.dict()}), 'token_type':'bearer'}
 
 
 @authentication_router.post('/users', response_model=User_Pydantic)
@@ -107,7 +110,7 @@ async def create_user(user: UserIn_Pydantic):
         user (UserIn_Pydantic): Username and password to be registered.
 
     Returns:
-        User_Pydantic: User saved. 
+        User_Pydantic: User saved.
     """
     user_obj = User(username=user.username, password_hash=bcrypt.hash(user.password_hash))
     await user_obj.save()
@@ -268,15 +271,126 @@ dashboard_router = APIRouter(
 
 
 @dashboard_router.get("/route_info")
-def upload_file(
+def packet_info(
     where_which: str,
     user: User_Pydantic = Depends(get_current_user),
 ):
+    """
+    Execute a complete query with all requested charts from an
+    especific location.
+
+    Args:
+        where_which (str): String containing the cam location (1st),
+        followed by each needed chart request, separated by '.'
+
+    Returns:
+        (dict): Each key is a requested chart and their respective
+        values are the response from each of them.
+    """
     return dp.build_info(where_which)
 
 
 @dashboard_router.get("/route_all_info")
-def upload_file(
+def abstract_info(
     user: User_Pydantic = Depends(get_current_user),
 ):
+    """
+    Used by the main page of dashboard, which holds a resumed
+    information about every cam location.
+
+    Returns:
+        (dict): Each key is a cam location and have as they value
+        a list with today's statistics about 3 status.
+    """
     return dp.build_info_all()
+
+# ------------------------------------------------------ACCOUNT CONFIG
+config_router = APIRouter(
+    tags=["configuration"]
+)
+
+
+@config_router.get("/current_location")
+def get_system_location(user: User_Pydantic = Depends(get_current_user)):
+    """
+    Send the current location used by ConEg system.
+
+    Returns:
+        (dict): Current city and state/province stored.
+    """
+    try:
+        with open(f'./shr-data/config_location.yaml', 'r') as f:
+            data = yaml.load(f)
+    except FileNotFoundError as e:
+        with open(f'./shr-data/config_location.yaml', 'w') as f:
+            data = {
+                "city": "Ainda não definida",
+                "state": "NA"
+            }
+            yaml.dump(data, f)
+
+    return {
+        "city": data['city'],
+        "state": data['state']
+      }
+
+
+@config_router.post("/update_location")
+def register_system_location(
+    item: UpdateLocation,
+    user: User_Pydantic = Depends(get_current_user)
+    ):
+    """
+    Update the current location used by ConEg system.
+
+    Args:
+        item (UpdateLocation): Request model containing city and state
+        to be used on system prediction.
+
+    Returns:
+        (dict): Current city and state stored.
+    """
+    item_dict = item.dict()
+    with open(f'./shr-data/config_location.yaml', 'w', encoding='utf-8') as f:
+        data = {
+            "city": item_dict['city'],
+            "state": item_dict['state']
+        }
+        yaml.dump(data, f)
+
+    return {
+        "city": data['city'],
+        "state": data['state']
+    }
+
+
+@config_router.post("/change_pw")
+async def register_new_pw(
+    current_pw: str = Form(...),
+    new_pw: str = Form(...),
+    user: User_Pydantic = Depends(get_current_user)
+    ):
+    """
+    Update password.
+
+    Args:
+        current_pw (str): current password for current user.
+        new_pw (str): new password for current user.
+
+    Returns:
+        (dict): Current and new one password to be stored.
+    """
+    #user = authenticate_user(user.dict()['username'], current_pw)
+    user_obj = await User.get(username=user.username)
+    if not user_obj.verify_password(current_pw):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail='Invalid current password'
+        )
+    user_obj.password_hash = bcrypt.hash(new_pw)
+    await user_obj.save(update_fields=['password_hash'])
+    user_pydantic = await User_Pydantic.from_tortoise_orm(user_obj)
+    return {
+        'access_token': create_access_token(data={"sub": user_pydantic.dict()}), 
+        'token_type':'bearer'
+    }

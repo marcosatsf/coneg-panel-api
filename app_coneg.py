@@ -3,7 +3,7 @@ from tortoise.contrib.fastapi import register_tortoise
 from db_transactions import PsqlPy
 from model.user_model import User_Pydantic
 from fastapi.middleware.cors import CORSMiddleware
-from routes import get_current_user, authentication_router, register_router, notification_router, dashboard_router
+from routes import get_current_user, authentication_router, register_router, notification_router, dashboard_router, config_router
 import uvicorn
 
 
@@ -17,9 +17,10 @@ import uvicorn
 # Instantiate app and routes
 app = FastAPI()
 app.include_router(authentication_router)
+app.include_router(dashboard_router)
 app.include_router(register_router)
 app.include_router(notification_router)
-app.include_router(dashboard_router)
+app.include_router(config_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=['*'],
