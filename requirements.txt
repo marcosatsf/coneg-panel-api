@@ -7,3 +7,6 @@ bcrypt==3.2.0
 asyncpg==0.23.0
 psycopg2-binary==2.8.6
 pandas==1.2.4
+tensorflow==2.4.1
+keras==2.3.1
+sklearn

@@ -1,5 +1,7 @@
+from timeseries import TimeSeriesLSTM
 from typing import List, Dict
 from db_transactions import PsqlPy
+from threading import Lock, Thread
 
 
 def build_info(where_which: str) -> Dict:
@@ -49,6 +51,10 @@ def build_info(where_which: str) -> Dict:
         elif element == 'infodata':
             # max and min not using mask. Given a day
             data[element] = db.select_query(query_path='info_data_query.sql', local=where)
+        elif element == 'timeseries':
+            # exe = Thread(target=self.send2api, args=(frame_in_bytes, count_no_mask, count_mask,))
+            # exe.start()
+            data[element] = TimeSeriesLSTM().get_prediction()
     db.disconnect()
     return data
 

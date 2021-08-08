@@ -150,6 +150,16 @@ class PsqlPy:
             raise Exception
 
 
+    def reset_notif(self):
+        with open('sql/reset_notif.sql','r') as f:
+            query = f.read()
+        try:
+            self.cur.execute(query)
+        except Exception:
+            print("Cannot update!")
+            raise Exception
+
+
     def disconnect(self):
         """
         Invalidate DB connection.

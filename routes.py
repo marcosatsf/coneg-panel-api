@@ -1,9 +1,9 @@
+from timeseries import TimeSeriesLSTM
 from typing import List
 from fastapi.routing import APIRouter
 from passlib.hash import bcrypt
 from model.notificacao_model import UpdateNotifi
 from model.location_model import UpdateLocation
-from model.password_model import PasswordChange
 from model.user_model import User, User_Pydantic, UserIn_Pydantic
 from fastapi.security.oauth2 import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi import HTTPException, status, Depends, UploadFile, File, Form
@@ -357,6 +357,8 @@ def register_system_location(
             "state": item_dict['state']
         }
         yaml.dump(data, f)
+
+    ts = TimeSeriesLSTM(f_model_creation=True)
 
     return {
         "city": data['city'],
