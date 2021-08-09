@@ -54,7 +54,7 @@ def build_info(where_which: str) -> Dict:
         elif element == 'timeseries':
             # exe = Thread(target=self.send2api, args=(frame_in_bytes, count_no_mask, count_mask,))
             # exe.start()
-            data[element] = TimeSeriesLSTM().get_prediction()
+            data[element] = TimeSeriesLSTM().get_response()
     db.disconnect()
     return data
 
