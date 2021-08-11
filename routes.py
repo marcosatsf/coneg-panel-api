@@ -1,5 +1,5 @@
 from timeseries import TimeSeriesLSTM
-from typing import List
+from threading import Thread, Lock
 from fastapi.routing import APIRouter
 from passlib.hash import bcrypt
 from model.notificacao_model import UpdateNotifi
@@ -21,6 +21,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
+
+lock_server = Lock()
 
 
 # ------------------------------------------------------AUTH
@@ -287,7 +289,7 @@ def packet_info(
         (dict): Each key is a requested chart and their respective
         values are the response from each of them.
     """
-    return dp.build_info(where_which)
+    return dp.build_info(where_which, lock_server)
 
 
 @dashboard_router.get("/route_all_info")
@@ -321,6 +323,7 @@ def get_system_location(user: User_Pydantic = Depends(get_current_user)):
     try:
         with open(f'./shr-data/config_location.yaml', 'r') as f:
             data = yaml.load(f)
+
     except FileNotFoundError as e:
         with open(f'./shr-data/config_location.yaml', 'w') as f:
             data = {
@@ -333,6 +336,14 @@ def get_system_location(user: User_Pydantic = Depends(get_current_user)):
         "city": data['city'],
         "state": data['state']
       }
+
+
+def create_timeseriesLSTM():
+    # context manager to acquire and release lock
+    print('routes_out_locker')
+    with lock_server:
+        print('routes_in_locker')
+        TimeSeriesLSTM(f_model_creation=True)
 
 
 @config_router.post("/update_location")
@@ -358,7 +369,8 @@ def register_system_location(
         }
         yaml.dump(data, f)
 
-    ts = TimeSeriesLSTM(f_model_creation=True)
+    exe = Thread(target=create_timeseriesLSTM)
+    exe.start()
 
     return {
         "city": data['city'],

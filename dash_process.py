@@ -1,16 +1,17 @@
+from threading import Lock
 from timeseries import TimeSeriesLSTM
 from typing import List, Dict
 from db_transactions import PsqlPy
-from threading import Lock, Thread
 
 
-def build_info(where_which: str) -> Dict:
+def build_info(where_which: str, locker : Lock) -> Dict:
     """
     Build information requested by ConEg Panel
 
     Args:
         where_which (str): String which informs which type of data
-        that panel requests and from which camera
+        that panel requests and from which camera.
+        locker (Lock): A Lock object in order to await some heavy process.
 
     Returns:
         data (dict): Data for each requested type given a camera
@@ -52,9 +53,10 @@ def build_info(where_which: str) -> Dict:
             # max and min not using mask. Given a day
             data[element] = db.select_query(query_path='info_data_query.sql', local=where)
         elif element == 'timeseries':
-            # exe = Thread(target=self.send2api, args=(frame_in_bytes, count_no_mask, count_mask,))
-            # exe.start()
-            data[element] = TimeSeriesLSTM().get_response()
+            print('dashprocess_out_locker')
+            with locker:
+                print('dashprocess_in_locker')
+                data[element] = TimeSeriesLSTM().get_response()
     db.disconnect()
     return data
 
