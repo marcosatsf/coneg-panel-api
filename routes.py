@@ -165,6 +165,17 @@ def get_notif(user: User_Pydantic = Depends(get_current_user)):
       }
 
 
+@notification_router.get("/get_ranking")
+def get_ranking(user: User_Pydantic = Depends(get_current_user)):
+    """
+    Get ranking of people by the 5 most notified ones.
+
+    Returns:
+        (dict): Current method and message stored.
+    """
+    return dp.build_ranking()
+
+
 @notification_router.post("/update_notif")
 def register_notif(
     item: UpdateNotifi,

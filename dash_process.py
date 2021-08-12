@@ -4,7 +4,7 @@ from typing import List, Dict
 from db_transactions import PsqlPy
 
 
-def build_info(where_which: str, locker : Lock) -> Dict:
+def build_info(where_which: str, locker : Lock = None) -> Dict:
     """
     Build information requested by ConEg Panel
 
@@ -57,6 +57,13 @@ def build_info(where_which: str, locker : Lock) -> Dict:
             with locker:
                 print('dashprocess_in_locker')
                 data[element] = TimeSeriesLSTM().get_response()
+    db.disconnect()
+    return data
+
+
+def build_ranking() -> Dict:
+    db = PsqlPy()
+    data = {'notified': {row[0]:{'name':row[1], 'qtd':row[2]} for row in db.select_query(query_path='ranking_query.sql')}}
     db.disconnect()
     return data
 
