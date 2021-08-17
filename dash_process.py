@@ -56,7 +56,7 @@ def build_info(where_which: str, locker : Lock = None) -> Dict:
             print('dashprocess_out_locker')
             with locker:
                 print('dashprocess_in_locker')
-                data[element] = TimeSeriesLSTM().get_response()
+                data[element] = TimeSeriesLSTM(day_check=where).get_response()
     db.disconnect()
     return data
 

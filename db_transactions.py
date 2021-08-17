@@ -53,7 +53,13 @@ class PsqlPy:
             raise Exception
 
 
-    def select_query(self, query_path: str, local: str = None, unique: bool = False):
+    def select_query(
+        self,
+        query_path: str,
+        local: str = None,
+        tuple_params: tuple = None,
+        unique: bool = False
+        ):
         with open(f'sql/{query_path}', 'r') as f:
             query = f.read()
 
@@ -61,6 +67,8 @@ class PsqlPy:
             if local:
                 data = (local, )
                 self.cur.execute(query, data)
+            elif tuple_params:
+                self.cur.execute(query, tuple_params)
             else:
                 self.cur.execute(query)
 

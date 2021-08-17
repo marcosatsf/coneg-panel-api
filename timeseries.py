@@ -10,7 +10,14 @@ import pandas as pd
 import yaml
 
 class TimeSeriesLSTM:
-    def __init__(self, f_model_creation=False) -> None:
+    def __init__(self, f_model_creation:bool=False, day_check:str=None) -> None:
+        """
+        TimeSeriesLSTM class to generate prediction based on recent Covid-19 cases.
+
+        Args:
+            f_model_creation (bool, optional): [Forces a model recreation]. Defaults to False.
+            day_check (str, optional): [Check if model is outdated]. Defaults to None.
+        """
         self.url_repo = 'https://raw.githubusercontent.com/seade-R/dados-covid-sp/master/data/dados_covid_sp.csv'
         self.model_path = f'.{os.sep}shr-data{os.sep}cache_cases.pckl'
         self.look_back = 7
@@ -25,6 +32,8 @@ class TimeSeriesLSTM:
             try:
                 with open(self.model_path, 'rb') as f:
                     self.response = pickle.load(f)
+                if day_check and (day_check != self.response.get('processed_date')):
+                    self.response = self.create_model()
             except Exception:
                 if os.path.exists(self.model_path):
                     os.remove(self.model_path)
@@ -103,7 +112,7 @@ class TimeSeriesLSTM:
             current_date += timedelta(days=1)
 
         #model.save(f'.{os.sep}shr-data{os.sep}timeseries_cases.model', save_format="h5")
-        final_data = {'prediction':cases_prediction_dict, 'locale':locale}
+        final_data = {'prediction':cases_prediction_dict, 'locale':locale, 'processed_date': datetime.now().strftime("%d/%m/%Y")}
         with open(self.model_path, 'wb') as f:
             pickle.dump(final_data, f)
         return final_data

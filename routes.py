@@ -10,6 +10,8 @@ from fastapi import HTTPException, status, Depends, UploadFile, File, Form
 from datetime import datetime, timedelta
 import files_manager as fm
 import dash_process as dp
+from db_transactions import PsqlPy
+from glob import glob
 import shutil
 import yaml
 import jwt
@@ -174,6 +176,49 @@ def get_ranking(user: User_Pydantic = Depends(get_current_user)):
         (dict): Current method and message stored.
     """
     return dp.build_ranking()
+
+
+@notification_router.get("/get_hist_notif")
+async def get_hist_notif(
+    pesid: int = 0,
+    offset: int = 0,
+    user: User_Pydantic = Depends(get_current_user)
+    ):
+    """
+    Get historical cases for that given ID.
+
+    Args:
+        pesid (int): ID of person.
+        offset (int): Offset to search in DB.
+
+    Returns:
+        (dict): Current method and message stored.
+    """
+    db = PsqlPy()
+    query_res = db.select_query(
+        query_path='hist_notif_query.sql',
+        tuple_params=(pesid, offset, )
+        )
+    res = []
+    # TODO iterate through every result:
+    for row in query_res:
+        tmp = {}
+        tmp['pesid'] = row[0]
+        tmp['name'] = row[1]
+        tmp['ts'] = row[2]
+        tmp['local'] = row[3]
+        file_path = glob(f'**/*_{row[0]}_{str(row[2])}.jpg')[0]
+        # 1 to notified, 0 to not notified
+        tmp['notified'] = int(file_path.split('/')[-1][0])
+        file_rec = File()
+        with open(file_path, 'rb') as buffer:
+            shutil.copyfileobj(buffer, file_rec.file)
+        tmp['image'] = file_rec
+
+        res.append(tmp)
+        
+    db.disconnect()
+    return res
 
 
 @notification_router.post("/update_notif")
