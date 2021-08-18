@@ -207,16 +207,18 @@ async def get_hist_notif(
         tmp['name'] = row[1]
         tmp['ts'] = row[2]
         tmp['local'] = row[3]
-        file_path = glob(f'**/*_{row[0]}_{str(row[2])}.jpg')[0]
-        # 1 to notified, 0 to not notified
-        tmp['notified'] = int(file_path.split('/')[-1][0])
-        file_rec = File()
-        with open(file_path, 'rb') as buffer:
-            shutil.copyfileobj(buffer, file_rec.file)
-        tmp['image'] = file_rec
+        file_path_list = glob(f'**/*_{row[0]}_{str(row[2])}.jpg')
+        if len(file_path_list)>0:
+            file_path = file_path_list[0]
+            # 1 to notified, 0 to not notified
+            tmp['notified'] = int(file_path.split('/')[-1][0])
+            file_rec = File()
+            with open(file_path, 'rb') as buffer:
+                shutil.copyfileobj(buffer, file_rec.file)
+            tmp['image'] = file_rec
 
         res.append(tmp)
-        
+
     db.disconnect()
     return res
 
