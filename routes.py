@@ -216,6 +216,9 @@ async def get_hist_notif(
             with open(file_path, 'rb') as buffer:
                 shutil.copyfileobj(buffer, file_rec.file)
             tmp['image'] = file_rec
+        else:
+            tmp['notified'] = 0
+            tmp['image'] = ''
 
         res.append(tmp)
 
