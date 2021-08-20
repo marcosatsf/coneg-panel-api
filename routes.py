@@ -207,7 +207,11 @@ async def get_hist_notif(
         tmp['name'] = row[1]
         tmp['ts'] = row[2]
         tmp['local'] = row[3]
-        file_path_list = glob(f'**/*_{row[0]}_{str(row[2])}.jpg')
+
+        timestamp_fmt = int(datetime.fromisoformat(str(row[2])).timestamp())
+        print(timestamp_fmt)
+        file_path_list = glob(f'./**/*_{row[0]}_{timestamp_fmt}')
+        print(file_path_list)
         if len(file_path_list)>0:
             file_path = file_path_list[0]
             # 1 to notified, 0 to not notified

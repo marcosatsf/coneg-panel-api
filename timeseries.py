@@ -3,6 +3,7 @@ from tensorflow.keras.layers import Dense, LSTM, Dropout
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
 from datetime import datetime, timedelta
+from db_transactions import PsqlPy
 import numpy as np
 import os
 import pickle
@@ -33,6 +34,9 @@ class TimeSeriesLSTM:
                 with open(self.model_path, 'rb') as f:
                     self.response = pickle.load(f)
                 if day_check and (day_check != self.response.get('processed_date')):
+                    db = PsqlPy()
+                    db.reset_notif()
+                    db.disconnect()
                     self.response = self.create_model()
             except Exception:
                 if os.path.exists(self.model_path):
