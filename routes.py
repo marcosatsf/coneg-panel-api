@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import files_manager as fm
 import dash_process as dp
 from db_transactions import PsqlPy
+import base64
 from glob import glob
 import shutil
 import yaml
@@ -208,21 +209,26 @@ async def get_hist_notif(
         tmp['ts'] = row[2]
         tmp['local'] = row[3]
 
-        timestamp_fmt = int(datetime.fromisoformat(str(row[2])).timestamp())
-        print(timestamp_fmt)
-        file_path_list = glob(f'./**/*_{row[0]}_{timestamp_fmt}')
-        print(file_path_list)
-        if len(file_path_list)>0:
-            file_path = file_path_list[0]
-            # 1 to notified, 0 to not notified
-            tmp['notified'] = int(file_path.split('/')[-1][0])
-            file_rec = File()
-            with open(file_path, 'rb') as buffer:
-                shutil.copyfileobj(buffer, file_rec.file)
-            tmp['image'] = file_rec
-        else:
-            tmp['notified'] = 0
-            tmp['image'] = ''
+        timestamp_fmt = int(datetime.fromisoformat(str(row[2])).timestamp())-10800
+        #print(timestamp_fmt)
+        path_frame = f'.{os.sep}shr-data{os.sep}registry{os.sep}*.jpg'
+
+        file_path_list = [e.split('/')[-1] for e in glob(path_frame)]
+
+        tmp['notified'] = 0
+        tmp['image'] = ''
+
+        for file_path in file_path_list:
+            #print(file_path, f'{timestamp_fmt}.jpg', str(row[0]))
+            if (f'{timestamp_fmt}.jpg' in file_path) and (str(row[0]) in file_path):
+                name_splitted = file_path.split('_')
+                # 1 to notified, 0 to not notified
+                tmp['notified'] = int(name_splitted[0])
+                file_rec = File(...)
+                with open(f'.{os.sep}shr-data{os.sep}registry{os.sep}{file_path}', 'rb') as buffer:
+                    tmp['image'] = base64.b64encode(buffer.read())
+                    # shutil.copyfileobj(buffer, file_rec.file)
+                # tmp['image'] = file_rec
 
         res.append(tmp)
 
