@@ -1,3 +1,4 @@
+from typing import Dict
 from timeseries import TimeSeriesLSTM
 from threading import Thread, Lock
 from fastapi.routing import APIRouter
@@ -377,6 +378,28 @@ def abstract_info(
     """
     return dp.build_info_all()
 
+
+@dashboard_router.post("/get_data_to_user")
+def packet_info(
+    set_dict: Dict[str, str],
+):
+    """
+    Execute a complete query with all requested charts.
+
+    Args:
+        set_dict (dict): Dictionary containing a position as key and
+        which module as value.
+
+    Returns:
+        (dict): Each key is a requested chart and their respective
+        values are the response from each of them.
+    """
+    response_data = {}
+    # TODO NOT YET FINISHED
+    for position in set_dict.keys:
+        response_data[position] = dp.build_info(set_dict[position], lock_server)
+    return response_data
+
 # ------------------------------------------------------ACCOUNT CONFIG
 config_router = APIRouter(
     tags=["configuration"]
@@ -479,3 +502,42 @@ async def register_new_pw(
         'access_token': create_access_token(data={"sub": user_pydantic.dict()}), 
         'token_type':'bearer'
     }
+
+
+@config_router.get("/available_infos")
+def get_available_infos(user: User_Pydantic = Depends(get_current_user)):
+    """
+    List all available infos (charts and metrics) from this ConEg system.
+
+    Returns:
+        (dict): Current available infos.
+    """
+    # TODO available infos
+    db = PsqlPy()
+    res = db.select_query_distinct(select='local', table='fato_faces')
+    db.disconnect()
+    return {'available': res}
+
+
+@config_router.get("/current_user_setup")
+def get_current_user_setup(user: User_Pydantic = Depends(get_current_user)):
+    """
+    Send the current user setup used by ConEg system.
+
+    Returns:
+        (dict): Current user setup stored.
+    """
+    try:
+        with open(f'./shr-data/config_user_setup.yaml', 'r') as f:
+            data = yaml.load(f)
+
+    except FileNotFoundError as e:
+        with open(f'./shr-data/config_user_setup.yaml', 'w') as f:
+            # TODO DEFINE DEFAULT DATA
+            data = {}
+            yaml.dump(data, f)
+
+    return {
+        "city": data['city'],
+        "state": data['state']
+      }

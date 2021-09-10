@@ -4,7 +4,7 @@ from typing import List, Dict
 from db_transactions import PsqlPy
 
 
-def build_info(where_which: str, locker : Lock = None) -> Dict:
+def build_info(where_which: str, locker : Lock) -> Dict:
     """
     Build information requested by ConEg Panel
 
@@ -51,12 +51,14 @@ def build_info(where_which: str, locker : Lock = None) -> Dict:
             data[element] = db.select_query(query_path='usage_data_query.sql', local=where, unique=True)
         elif element == 'infodata':
             # max and min not using mask. Given a day
-            data[element] = db.select_query(query_path='info_data_query.sql', local=where)
+            data[element] = db.select_query(query_path='info_data_query.sql', tuple_params=(where, where, ))
         elif element == 'timeseries':
             print('dashprocess_out_locker')
             with locker:
                 print('dashprocess_in_locker')
                 data[element] = TimeSeriesLSTM(day_check=where).get_response()
+        elif element == 'allinfodata':
+            data[element] = build_info_all()
     db.disconnect()
     return data
 

@@ -26,8 +26,6 @@ class TimeSeriesLSTM:
         if self.crashed:
             print("Unavailable model!")
         elif f_model_creation:
-            if os.path.exists(self.model_path):
-                os.remove(self.model_path)
             self.response = self.create_model()
         else:
             try:
@@ -39,8 +37,8 @@ class TimeSeriesLSTM:
                     db.disconnect()
                     self.response = self.create_model()
             except Exception:
-                if os.path.exists(self.model_path):
-                    os.remove(self.model_path)
+                # if os.path.exists(self.model_path):
+                #     os.remove(self.model_path)
                 self.response = self.create_model()
 
 
