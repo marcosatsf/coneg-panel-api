@@ -504,6 +504,14 @@ async def register_new_pw(
     }
 
 
+def create_module(module: str, name: str, size:int=1) -> Dict:
+    item = {}
+    item['module'] = module
+    item['size'] = size
+    item['name'] = name
+    return item
+
+
 @config_router.get("/available_infos")
 def get_available_infos(user: User_Pydantic = Depends(get_current_user)):
     """
@@ -512,17 +520,55 @@ def get_available_infos(user: User_Pydantic = Depends(get_current_user)):
     Returns:
         (dict): Current available infos.
     """
-    # TODO available infos
+    # Retrieve all available locals
     db = PsqlPy()
     res = db.select_query_distinct(select='local', table='fato_faces')
     db.disconnect()
-    return {'available': res}
+
+    # Building response packet
+    data = {'features':[]}
+    available_options = [
+        'weeklydata',
+        'dailydata',
+        'usagedata',
+        'infodata',
+    ]
+    available_options_human_readable = [
+        'Dados semanais',
+        'Dados diários',
+        'Dados gerais',
+        'Métricas',
+    ]
+    # Convolute locals with options
+    for local in res:
+        for idx, option in enumerate(available_options):
+            data['features'].append(create_module(
+                module=f'{local}.{option}',
+                name=f'{available_options_human_readable[idx]} de {local}'
+            ))
+
+    # Prediction feature
+    date_now = datetime.now().strftime("%d/%m/%Y")
+    data['features'].append(create_module(
+                module=f'{date_now}.timeseries',
+                name=f'Predição de casos para a semana',
+                size=2
+            ))
+
+    # All feature
+    data['features'].append(create_module(
+                module=f'{date_now}.allinfodata',
+                name=f'Dados de hoje',
+                size=2
+            ))
+
+    return data
 
 
 @config_router.get("/current_user_setup")
 def get_current_user_setup(user: User_Pydantic = Depends(get_current_user)):
     """
-    Send the current user setup used by ConEg system.
+    Get the current user setup used by ConEg system.
 
     Returns:
         (dict): Current user setup stored.
@@ -533,11 +579,60 @@ def get_current_user_setup(user: User_Pydantic = Depends(get_current_user)):
 
     except FileNotFoundError as e:
         with open(f'./shr-data/config_user_setup.yaml', 'w') as f:
-            # TODO DEFINE DEFAULT DATA
-            data = {}
+            data = {
+                '0,0': {'module': '-', 'name': 'Vazio', 'size': 1},
+                '0,1': {'module': '-', 'name': 'Vazio', 'size': 1},
+                '1,0': {'module': '-', 'name': 'Vazio', 'size': 1},
+                '1,1': {'module': '-', 'name': 'Vazio', 'size': 1},
+            }
             yaml.dump(data, f)
 
-    return {
-        "city": data['city'],
-        "state": data['state']
-      }
+    return data
+
+
+@config_router.post("/update_user_setup")
+def get_current_user_setup(
+    set_user_setup: Dict[str, Dict],
+    user: User_Pydantic = Depends(get_current_user)
+    ):
+    """
+    Send the configuration user setup made by admin.
+
+    Args:
+        set_user_setup (dict): Configuration made by user.
+
+    Returns:
+        (dict): Current user setup stored.
+    """
+    with open(f'./shr-data/config_user_setup.yaml', 'w') as f:
+        yaml.dump(set_user_setup, f)
+
+    return set_user_setup
+
+# ------------------------------------------------------USER CONFIG
+user_router = APIRouter(
+    tags=["user_panel"]
+)
+@user_router.get("/setup_user")
+def get_current_user_setup():
+    """
+    Get the current user setup used by ConEg system. (No Authentication)
+
+    Returns:
+        (dict): Current user setup stored.
+    """
+    try:
+        with open(f'./shr-data/config_user_setup.yaml', 'r') as f:
+            data = yaml.load(f)
+
+    except FileNotFoundError as e:
+        with open(f'./shr-data/config_user_setup.yaml', 'w') as f:
+            data = {
+                '0,0': {'module': '-', 'name': 'Vazio', 'size': 1},
+                '0,1': {'module': '-', 'name': 'Vazio', 'size': 1},
+                '1,0': {'module': '-', 'name': 'Vazio', 'size': 1},
+                '1,1': {'module': '-', 'name': 'Vazio', 'size': 1},
+            }
+            yaml.dump(data, f)
+
+    return data
