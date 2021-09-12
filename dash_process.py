@@ -50,8 +50,14 @@ def build_info(where_which: str, locker : Lock) -> Dict:
         elif element == 'usagedata':
             data[element] = db.select_query(query_path='usage_data_query.sql', local=where, unique=True)
         elif element == 'infodata':
-            # max and min not using mask. Given a day
+            # max and min not using mask.
             data[element] = db.select_query(query_path='info_data_query.sql', tuple_params=(where, where, ))
+            # today metric
+            tmp_additional = db.select_query(query_path='info_data_additional_query.sql', local=where, unique=True)
+            if tmp_additional:
+                data[element].append(tmp_additional)
+            else:
+                data[element].append([0])
         elif element == 'timeseries':
             print('dashprocess_out_locker')
             with locker:
