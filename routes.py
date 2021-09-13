@@ -202,7 +202,7 @@ async def get_hist_notif(
         tuple_params=(pesid, offset, )
         )
     res = []
-    # TODO iterate through every result:
+
     for row in query_res:
         tmp = {}
         tmp['pesid'] = row[0]
@@ -377,28 +377,6 @@ def abstract_info(
         a list with today's statistics about 3 status.
     """
     return dp.build_info_all()
-
-
-@dashboard_router.post("/get_data_to_user")
-def packet_info(
-    set_dict: Dict[str, str],
-):
-    """
-    Execute a complete query with all requested charts.
-
-    Args:
-        set_dict (dict): Dictionary containing a position as key and
-        which module as value.
-
-    Returns:
-        (dict): Each key is a requested chart and their respective
-        values are the response from each of them.
-    """
-    response_data = {}
-    # TODO NOT YET FINISHED
-    for position in set_dict.keys:
-        response_data[position] = dp.build_info(set_dict[position], lock_server)
-    return response_data
 
 # ------------------------------------------------------ACCOUNT CONFIG
 config_router = APIRouter(
@@ -634,5 +612,36 @@ def get_current_user_setup():
                 '1,1': {'module': '-', 'name': 'Vazio', 'size': 1},
             }
             yaml.dump(data, f)
-
     return data
+
+
+@user_router.get("/data_to_user")
+def get_data_to_user(
+    batch: str,
+):
+    """
+    Execute a complete query with all requested charts.
+
+    Args:
+        where_which (dict): Request from a batch of modules.
+
+    Returns:
+        (dict): Each key is a requested chart and their respective
+        values are the response from each of them.
+    """
+    modules_listed = batch.split(':')
+
+    coords_list = [
+        '0,0',
+        '0,1',
+        '1,0',
+        '1,1'
+    ]
+
+    data_res = {}
+    for idx, module in enumerate(modules_listed):
+        if module != 'Vazio':
+            data_res[coords_list[idx]] = dp.build_info(module, lock_server)
+    print(data_res)
+
+    return data_res
