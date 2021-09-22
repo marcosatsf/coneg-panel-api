@@ -45,8 +45,16 @@ class TimeSeriesLSTM:
     def create_model(self):
         try:
             df_loaded = pd.read_csv(self.url_repo, delimiter=';', usecols=['nome_munic','casos_novos','datahora'])
-            with open(f'.{os.sep}shr-data{os.sep}config_location.yaml', 'r') as f:
-                data = yaml.load(f)
+            try:
+                with open(f'.{os.sep}shr-data{os.sep}config_location.yaml', 'r') as f:
+                    data = yaml.load(f)
+            except FileNotFoundError as e:
+                with open(f'.{os.sep}shr-data{os.sep}config_location.yaml', 'w') as f:
+                    data = {
+                    'city':'Campinas',
+                    'state':'SP'
+                    }
+                    yaml.dump(data, f)
                 # data['city'] to access current city
             df_filtered = df_loaded[df_loaded.nome_munic==data['city']]
             locale = f"{data['city']} - {data['state']}"
