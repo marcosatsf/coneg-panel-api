@@ -7,15 +7,7 @@ WITH daily_report AS (
     )
     UNION ALL
     (
-        WITH today_tot AS (
-            SELECT count(tid) AS partial_tot, CURRENT_DATE AS today 
-            FROM coneg.fato_faces ff
-            WHERE local = %s AND status > 0 AND date_trunc('day', ts) = CURRENT_DATE
-            GROUP BY date_trunc('day', ts)
-        )
-        SELECT DISTINCT CURRENT_DATE, coalesce(tt.partial_tot, 0) AS partial_tot
-        FROM coneg.fato_faces ff
-        LEFT JOIN today_tot tt ON tt.today=CURRENT_DATE
+        SELECT CURRENT_DATE, 0 AS partial_tot
     )
 ),
 sum_tot_values AS (

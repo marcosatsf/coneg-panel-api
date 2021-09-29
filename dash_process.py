@@ -51,7 +51,7 @@ def build_info(where_which: str, locker : Lock) -> Dict:
             data[element] = db.select_query(query_path='usage_data_query.sql', local=where, unique=True)
         elif element == 'infodata':
             # max and min not using mask.
-            data[element] = db.select_query(query_path='info_data_query.sql', tuple_params=(where, where, ))
+            data[element] = db.select_query(query_path='info_data_query.sql', local=where)
             # today metric
             tmp_additional = db.select_query(query_path='info_data_additional_query.sql', local=where, unique=True)
             if tmp_additional:

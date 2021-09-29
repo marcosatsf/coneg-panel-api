@@ -303,6 +303,7 @@ def upload_file(
 @register_router.post("/upload_single")
 def upload_single(
     user: User_Pydantic = Depends(get_current_user),
+    identificacao: int = Form(...),
     nome: str = Form(...),
     email: str = Form(...),
     telefone: str = Form(...),
@@ -312,6 +313,7 @@ def upload_single(
     Route to manage a single record.
 
     Args:
+        identificacao (int): Id of record.
         nome (str): name of record.
         email (str): email of record.
         tel (str): phone of record.
@@ -324,19 +326,51 @@ def upload_single(
     Returns:
         (dict): Response with ID of register.
     """
-    name_from_id = file_rec.filename.split('.')[0]
-    with open(f'./{name_from_id}.jpg', 'wb') as buffer:
+    with open(f'./{identificacao}.jpg', 'wb') as buffer:
         shutil.copyfileobj(file_rec.file, buffer)
     try:
         fm.insert_one(
-            ident=name_from_id,
+            ident=identificacao,
             nome=nome,
             email=email,
             tel=telefone
         )
-        return {"success_insert_id": str(name_from_id)}
+        return {"success_insert_id": str(identificacao)}
     except Exception as error:
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=error)
+
+
+@register_router.get("/get_lista_user")
+async def get_registry_from_coneg(
+    pesid: int = None,
+    offset: int = 0,
+    user: User_Pydantic = Depends(get_current_user)
+    ):
+    """
+    Get List of registered user.
+
+    Args:
+        pesid (int): ID of person.
+        offset (int): Offset to search in DB.
+
+    Returns:
+        (dict): Current method and message stored.
+    """
+    db = PsqlPy()
+    if pesid:
+        try:
+            resp = db.select_query(
+                query_path='verify_user.sql',
+                tuple_params=(pesid, ),
+                unique=True
+                )[0]
+            data = {'alreadyHasId': True}
+        except IndexError as e:
+            data = {'alreadyHasId': False}
+    else:
+        data = {'users': [{'pesid':row[0], 'name':row[1], 'email':row[2], 'tel':row[3]} for row in db.select_query(query_path='list_user_query.sql',tuple_params=(offset, ))]}
+    db.disconnect()
+    return data
 
 # ------------------------------------------------------DASHBOARD
 dashboard_router = APIRouter(

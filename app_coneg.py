@@ -8,10 +8,10 @@ import uvicorn
 
 
 # Consts
-# ORIGINS = [
-#     "http://localhost",
-#     "http://localhost:8080",
-# ]
+ORIGINS = [
+    "http://localhost",
+    "http://localhost:8080",
+]
 
 
 # Instantiate app and routes
@@ -24,7 +24,7 @@ app.include_router(config_router)
 app.include_router(user_router)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['*'],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

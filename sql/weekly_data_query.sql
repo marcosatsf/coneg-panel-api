@@ -11,8 +11,8 @@ SELECT
 FROM coneg.fato_faces ff
 WHERE
     local = %s AND
-    ts BETWEEN date_trunc('day', CURRENT_DATE - interval '7 day') AND
-    date_trunc('day', CURRENT_DATE)
+    ts BETWEEN date_trunc('day', CURRENT_DATE - interval '6 day') AND
+    date_trunc('day', CURRENT_DATE + interval '1 day')
 GROUP BY date_trunc('day', ts), ff.status
 )
 SELECT
