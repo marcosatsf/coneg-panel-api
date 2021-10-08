@@ -109,7 +109,7 @@ def insert_one(ident: int, nome: str, email: str, tel: str) -> None:
             is_update = False
             if not os.path.exists('shr-data/faces/'):
                 os.mkdir('shr-data/faces/')
-
+        print('Move tmp file to faces folders')
         shutil.move(f'./{ident}.jpg', f"shr-data/faces/{ident}.jpg")
 
         db = PsqlPy()
@@ -127,6 +127,7 @@ def insert_one(ident: int, nome: str, email: str, tel: str) -> None:
                 email=email,
                 telefone=tel
             )
+        print('Finishing insert one')
         db.disconnect()
     except Exception as e:
         raise e

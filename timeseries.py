@@ -81,14 +81,13 @@ class TimeSeriesLSTM:
         trainX = np.reshape(trainX, (trainX.shape[0], 1, trainX.shape[1]))
 
         # modelling, compilling and fitting
-        hidden_nodes = int(2/3 * self.look_back)
         model = Sequential()
-        model.add(LSTM(hidden_nodes, input_shape=(1, self.look_back)))
-        model.add(Dense(hidden_nodes*2))
-        model.add(Dropout(0.0055))
+        model.add(LSTM(128, input_shape=(1, self.look_back)))
+        model.add(Dropout(0.055))
+        model.add(Dense(256))
         model.add(Dense(1, activation='tanh'))
-        model.compile(loss='mean_squared_error', optimizer='adam')
-        model.fit(trainX, trainY, epochs=30, batch_size=1, verbose=1)
+        model.compile(loss='mean_absolute_error', optimizer='adam', metrics=['mse'])
+        model.fit(trainX, trainY, epochs=60, batch_size=2, verbose=1)
 
         # last look_back cases
         look_back_cases = df_cases[-self.look_back:]
